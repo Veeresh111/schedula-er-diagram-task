@@ -1,71 +1,184 @@
+Table clinics {
+  id int [pk, increment]
+  name varchar
+  address text
+  city varchar
+  state varchar
+  pincode varchar
+  created_at timestamp
+}
+
 Table users {
-  user_id int [pk, increment]
+  id int [pk, increment]
   full_name varchar
+  mobile_number varchar [unique]
   email varchar [unique]
   password_hash varchar
-  phone varchar
-  role varchar // patient, doctor, admin
+  role varchar // patient, doctor, admin, support
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table patients {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  full_name varchar
+  age int
+  gender varchar
+  dob date
+  blood_group varchar
+  allergies text
+  chronic_conditions text
+  emergency_contact varchar
   created_at timestamp
 }
 
 Table doctors {
-  doctor_id int [pk, increment]
-  user_id int [ref: > users.user_id]
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  clinic_id int [ref: > clinics.id]
+  full_name varchar
   specialization varchar
+  qualification varchar
   experience_years int
-  hospital_name varchar
-  consultation_fee decimal
-  bio text
+  fee decimal
   rating decimal
+  bio text
+  created_at timestamp
 }
 
-Table patients {
-  patient_id int [pk, increment]
-  user_id int [ref: > users.user_id]
-  age int
-  gender varchar
-  blood_group varchar
-  medical_history text
-  emergency_contact varchar
+Table availability {
+  id int [pk, increment]
+  doctor_id int [ref: > doctors.id]
+  day_of_week varchar
+  start_time time
+  end_time time
+  slot_duration_minutes int
+  break_start time
+  break_end time
 }
 
 Table time_slots {
-  slot_id int [pk, increment]
-  doctor_id int [ref: > doctors.doctor_id]
+  id int [pk, increment]
+  doctor_id int [ref: > doctors.id]
+  availability_id int [ref: > availability.id]
   slot_date date
   start_time time
   end_time time
   is_booked boolean
+  booking_locked_until timestamp
 }
 
 Table appointments {
-  appointment_id int [pk, increment]
-  patient_id int [ref: > patients.patient_id]
-  doctor_id int [ref: > doctors.doctor_id]
-  slot_id int [ref: > time_slots.slot_id]
-  booking_reason text
-  status varchar // pending, confirmed, cancelled, completed, rescheduled
+  id int [pk, increment]
+  patient_id int [ref: > patients.id]
+  doctor_id int [ref: > doctors.id]
+  clinic_id int [ref: > clinics.id]
+  slot_id int [ref: > time_slots.id]
+  appointment_type varchar // online, offline, followup
+  status varchar // pending, confirmed, completed, cancelled, no_show, rescheduled
+  token_number int
+  consultation_type varchar
+  symptoms text
+  notes text
+  booked_by_user_id int [ref: > users.id]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table appointment_reschedule_history {
+  id int [pk, increment]
+  appointment_id int [ref: > appointments.id]
+  old_slot_id int [ref: > time_slots.id]
+  new_slot_id int [ref: > time_slots.id]
+  reason text
+  requested_by int [ref: > users.id]
+  status varchar
   created_at timestamp
 }
 
-Table chat_messages {
-  message_id int [pk, increment]
-  appointment_id int [ref: > appointments.appointment_id]
-  sender_user_id int [ref: > users.user_id]
-  receiver_user_id int [ref: > users.user_id]
-  message_text text
-  sent_at timestamp
+Table payments {
+  id int [pk, increment]
+  appointment_id int [ref: > appointments.id]
+  amount decimal
+  currency varchar
+  payment_method varchar
+  transaction_ref varchar
+  status varchar // initiated, success, failed, refunded
+  paid_at timestamp
+}
+
+Table chats {
+  id int [pk, increment]
+  appointment_id int [ref: > appointments.id]
+  sender_user_id int [ref: > users.id]
+  message text
+  attachment_url varchar
+  created_at timestamp
   is_read boolean
 }
 
-Table reschedule_requests {
-  request_id int [pk, increment]
-  appointment_id int [ref: > appointments.appointment_id]
-  old_slot_id int [ref: > time_slots.slot_id]
-  new_slot_id int [ref: > time_slots.slot_id]
-  reason text
-  status varchar // requested, approved, rejected
-  requested_at timestamp
+Table feedback {
+  id int [pk, increment]
+  appointment_id int [ref: > appointments.id]
+  doctor_rating int
+  clinic_rating int
+  waiting_experience_rating int
+  comments text
+  created_at timestamp
 }
 
-Ref: "doctors"."hospital_name" < "doctors"."consultation_fee"
+Table notifications {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  appointment_id int [ref: > appointments.id]
+  type varchar // booking, reminder, cancel, reschedule
+  title varchar
+  message text
+  status varchar // sent, delivered, read
+  created_at timestamp
+}
+
+Table support_tickets {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  appointment_id int [ref: > appointments.id]
+  issue_type varchar
+  message text
+  status varchar
+  priority varchar
+  created_at timestamp
+}
+
+Table family_mapping {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  patient_id int [ref: > patients.id]
+  relation varchar
+  is_primary boolean
+}
+
+Table groups {
+  id int [pk, increment]
+  doctor_id int [ref: > doctors.id]
+  topic varchar
+  created_at timestamp
+}
+
+Table group_members {
+  id int [pk, increment]
+  group_id int [ref: > groups.id]
+  patient_id int [ref: > patients.id]
+  joined_at timestamp
+}
+
+Table ivr_appointments {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  doctor_id int [ref: > doctors.id]
+  external_reference varchar
+  call_status varchar
+  appointment_status varchar
+  created_at timestamp
+}
