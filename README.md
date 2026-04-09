@@ -514,3 +514,5 @@ Patient ID 2: Jon Doe
 **Notification Sent**
 
 John gets email: "Your accounts have been merged. Please use john.doe@gmail.com to login going forward."
+
+## Final review-ready submission for Task 1
